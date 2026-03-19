@@ -3,7 +3,6 @@ import sys
 import re
 import ctypes
 import logging
-from pathlib import Path
 from typing import TypedDict
 
 import numpy as np
