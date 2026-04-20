@@ -331,16 +331,7 @@ class CLIP:
             if show_pbar:
                 pbar = ProgressBar(len(scheduled_keyframes))
 
-            # Set CUDA device context for the scheduled encoding loop
-            prev_cuda_device = None
-            if device.type == "cuda" and device.index is not None:
-                prev_cuda_device = torch.cuda.current_device()
-                if prev_cuda_device != device.index:
-                    torch.cuda.set_device(device)
-                else:
-                    prev_cuda_device = None
-
-            try:
+            with model_management.cuda_device_context(device):
                 for scheduled_opts in scheduled_keyframes:
                     t_range = scheduled_opts[0]
                     # don't bother encoding any conds outside of start_percent and end_percent bounds
@@ -370,9 +361,6 @@ class CLIP:
                     if show_pbar:
                         pbar.update(1)
                     model_management.throw_exception_if_processing_interrupted()
-            finally:
-                if prev_cuda_device is not None:
-                    torch.cuda.set_device(prev_cuda_device)
             all_hooks.reset()
         return all_cond_pooled
 
@@ -389,20 +377,8 @@ class CLIP:
         device = self.patcher.load_device
         self.cond_stage_model.set_clip_options({"execution_device": device})
 
-        # Set CUDA device context to match the CLIP model's load device
-        prev_cuda_device = None
-        if device.type == "cuda" and device.index is not None:
-            prev_cuda_device = torch.cuda.current_device()
-            if prev_cuda_device != device.index:
-                torch.cuda.set_device(device)
-            else:
-                prev_cuda_device = None
-
-        try:
+        with model_management.cuda_device_context(device):
             o = self.cond_stage_model.encode_token_weights(tokens)
-        finally:
-            if prev_cuda_device is not None:
-                torch.cuda.set_device(prev_cuda_device)
 
         cond, pooled = o[:2]
         if return_dict:
@@ -462,19 +438,8 @@ class CLIP:
         self.cond_stage_model.set_clip_options({"layer": None})
         self.cond_stage_model.set_clip_options({"execution_device": device})
 
-        prev_cuda_device = None
-        if device.type == "cuda" and device.index is not None:
-            prev_cuda_device = torch.cuda.current_device()
-            if prev_cuda_device != device.index:
-                torch.cuda.set_device(device)
-            else:
-                prev_cuda_device = None
-
-        try:
+        with model_management.cuda_device_context(device):
             return self.cond_stage_model.generate(tokens, do_sample=do_sample, max_length=max_length, temperature=temperature, top_k=top_k, top_p=top_p, min_p=min_p, repetition_penalty=repetition_penalty, seed=seed, presence_penalty=presence_penalty)
-        finally:
-            if prev_cuda_device is not None:
-                torch.cuda.set_device(prev_cuda_device)
 
     def decode(self, token_ids, skip_special_tokens=True):
         return self.tokenizer.decode(token_ids, skip_special_tokens=skip_special_tokens)
@@ -992,16 +957,7 @@ class VAE:
         if self.latent_dim == 2 and samples_in.ndim == 5:
             samples_in = samples_in[:, :, 0]
 
-        # Set CUDA device context to match the VAE's device
-        prev_cuda_device = None
-        if self.device.type == "cuda" and self.device.index is not None:
-            prev_cuda_device = torch.cuda.current_device()
-            if prev_cuda_device != self.device.index:
-                torch.cuda.set_device(self.device)
-            else:
-                prev_cuda_device = None
-
-        try:
+        with model_management.cuda_device_context(self.device):
             try:
                 memory_used = self.memory_used_decode(samples_in.shape, self.vae_dtype)
                 model_management.load_models_gpu([self.patcher], memory_required=memory_used, force_full_load=self.disable_offload)
@@ -1046,9 +1002,6 @@ class VAE:
                     tile = 256 // self.spacial_compression_decode()
                     overlap = tile // 4
                     pixel_samples = self.decode_tiled_3d(samples_in, tile_x=tile, tile_y=tile, overlap=(1, overlap, overlap))
-        finally:
-            if prev_cuda_device is not None:
-                torch.cuda.set_device(prev_cuda_device)
 
         pixel_samples = pixel_samples.to(self.output_device).movedim(1,-1)
         return pixel_samples
@@ -1066,20 +1019,21 @@ class VAE:
         if overlap is not None:
             args["overlap"] = overlap
 
-        if dims == 1 or self.extra_1d_channel is not None:
-            args.pop("tile_y")
-            output = self.decode_tiled_1d(samples, **args)
-        elif dims == 2:
-            output = self.decode_tiled_(samples, **args)
-        elif dims == 3:
-            if overlap_t is None:
-                args["overlap"] = (1, overlap, overlap)
-            else:
-                args["overlap"] = (max(1, overlap_t), overlap, overlap)
-            if tile_t is not None:
-                args["tile_t"] = max(2, tile_t)
+        with model_management.cuda_device_context(self.device):
+            if dims == 1 or self.extra_1d_channel is not None:
+                args.pop("tile_y")
+                output = self.decode_tiled_1d(samples, **args)
+            elif dims == 2:
+                output = self.decode_tiled_(samples, **args)
+            elif dims == 3:
+                if overlap_t is None:
+                    args["overlap"] = (1, overlap, overlap)
+                else:
+                    args["overlap"] = (max(1, overlap_t), overlap, overlap)
+                if tile_t is not None:
+                    args["tile_t"] = max(2, tile_t)
 
-            output = self.decode_tiled_3d(samples, **args)
+                output = self.decode_tiled_3d(samples, **args)
         return output.movedim(1, -1)
 
     def encode(self, pixel_samples):
@@ -1093,16 +1047,7 @@ class VAE:
             else:
                 pixel_samples = pixel_samples.unsqueeze(2)
 
-        # Set CUDA device context to match the VAE's device
-        prev_cuda_device = None
-        if self.device.type == "cuda" and self.device.index is not None:
-            prev_cuda_device = torch.cuda.current_device()
-            if prev_cuda_device != self.device.index:
-                torch.cuda.set_device(self.device)
-            else:
-                prev_cuda_device = None
-
-        try:
+        with model_management.cuda_device_context(self.device):
             try:
                 memory_used = self.memory_used_encode(pixel_samples.shape, self.vae_dtype)
                 model_management.load_models_gpu([self.patcher], memory_required=memory_used, force_full_load=self.disable_offload)
@@ -1141,9 +1086,6 @@ class VAE:
                     samples = self.encode_tiled_1d(pixel_samples)
                 else:
                     samples = self.encode_tiled_(pixel_samples)
-        finally:
-            if prev_cuda_device is not None:
-                torch.cuda.set_device(prev_cuda_device)
 
         return samples
 
@@ -1169,26 +1111,27 @@ class VAE:
         if overlap is not None:
             args["overlap"] = overlap
 
-        if dims == 1:
-            args.pop("tile_y")
-            samples = self.encode_tiled_1d(pixel_samples, **args)
-        elif dims == 2:
-            samples = self.encode_tiled_(pixel_samples, **args)
-        elif dims == 3:
-            if tile_t is not None:
-                tile_t_latent = max(2, self.downscale_ratio[0](tile_t))
-            else:
-                tile_t_latent = 9999
-            args["tile_t"] = self.upscale_ratio[0](tile_t_latent)
+        with model_management.cuda_device_context(self.device):
+            if dims == 1:
+                args.pop("tile_y")
+                samples = self.encode_tiled_1d(pixel_samples, **args)
+            elif dims == 2:
+                samples = self.encode_tiled_(pixel_samples, **args)
+            elif dims == 3:
+                if tile_t is not None:
+                    tile_t_latent = max(2, self.downscale_ratio[0](tile_t))
+                else:
+                    tile_t_latent = 9999
+                args["tile_t"] = self.upscale_ratio[0](tile_t_latent)
 
-            if overlap_t is None:
-                args["overlap"] = (1, overlap, overlap)
-            else:
-                args["overlap"] = (self.upscale_ratio[0](max(1, min(tile_t_latent // 2, self.downscale_ratio[0](overlap_t)))), overlap, overlap)
-            maximum = pixel_samples.shape[2]
-            maximum = self.upscale_ratio[0](self.downscale_ratio[0](maximum))
+                if overlap_t is None:
+                    args["overlap"] = (1, overlap, overlap)
+                else:
+                    args["overlap"] = (self.upscale_ratio[0](max(1, min(tile_t_latent // 2, self.downscale_ratio[0](overlap_t)))), overlap, overlap)
+                maximum = pixel_samples.shape[2]
+                maximum = self.upscale_ratio[0](self.downscale_ratio[0](maximum))
 
-            samples = self.encode_tiled_3d(pixel_samples[:,:,:maximum], **args)
+                samples = self.encode_tiled_3d(pixel_samples[:,:,:maximum], **args)
 
         return samples
 

@@ -28,7 +28,7 @@ import platform
 import weakref
 import gc
 import os
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 import comfy.memory_management
 import comfy.utils
 import comfy.quant_ops
@@ -270,6 +270,30 @@ def resolve_gpu_device_option(option: str):
             return None
     logging.warning(f"Unrecognized device option '{option}', using default.")
     return None
+
+@contextmanager
+def cuda_device_context(device):
+    """Context manager that sets torch.cuda.current_device to match *device*.
+
+    Used when running operations on a non-default CUDA device so that custom
+    CUDA kernels (e.g. comfy_kitchen fp8 quantization) pick up the correct
+    device index.  The previous device is restored on exit.
+
+    No-op when *device* is not CUDA, has no explicit index, or already matches
+    the current device.
+    """
+    prev = None
+    if device.type == "cuda" and device.index is not None:
+        prev = torch.cuda.current_device()
+        if prev != device.index:
+            torch.cuda.set_device(device)
+        else:
+            prev = None
+    try:
+        yield
+    finally:
+        if prev is not None:
+            torch.cuda.set_device(prev)
 
 def get_total_memory(dev=None, torch_total_too=False):
     global directml_enabled
