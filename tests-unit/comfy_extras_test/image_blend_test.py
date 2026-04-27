@@ -54,9 +54,9 @@ class TestImageBlend:
         non-singleton dimension 3'.
 
         The output is capped at 4 channels (RGBA) because downstream
-        SaveImage/PreviewImage rely on PIL.Image.fromarray, which only
-        supports 1/3/4-channel arrays. Without this cap, the failure would
-        just shift from blend-time to save-time.
+        SaveImage/PreviewImage rely on PIL.Image.fromarray, which rejects
+        arrays with more than 4 channels. Without this cap, the failure
+        would just shift from blend-time to save-time.
         """
         image1 = self.create_test_image(channels=3)
         image2 = self.create_test_image(channels=5)
@@ -65,8 +65,8 @@ class TestImageBlend:
 
     def test_output_capped_at_four_channels(self):
         """Both inputs having > 4 channels should still produce a 4-channel
-        output, since SaveImage/PreviewImage cannot serialize anything
-        wider than RGBA via PIL.Image.fromarray."""
+        output. PIL.Image.fromarray (used by SaveImage/PreviewImage)
+        rejects arrays with more than 4 channels."""
         image1 = self.create_test_image(channels=6)
         image2 = self.create_test_image(channels=5)
         result = Blend.execute(image1, image2, 0.5, "normal")
@@ -82,12 +82,11 @@ class TestImageBlend:
         image1 = self.create_test_image(channels=3)
         image2 = self.create_test_image(channels=5)
         result = Blend.execute(image1, image2, 0.5, "normal")
-        # Mirror SaveImage's exact conversion (nodes.py:1662)
+        # Mirror SaveImage's exact conversion (nodes.py:1662). PIL accepts
+        # 1/2/3/4-channel arrays (L/LA/RGB/RGBA); a >4-channel output would
+        # raise "TypeError: Cannot handle this data type" here.
         arr = np.clip(255.0 * result[0][0].cpu().numpy(), 0, 255).astype(np.uint8)
-        img = Image.fromarray(arr)
-        assert img.mode in ("L", "RGB", "RGBA"), (
-            f"Output mode {img.mode!r} cannot be saved by SaveImage"
-        )
+        Image.fromarray(arr)
 
     def test_different_size_and_channels(self):
         """Different spatial size AND different channel counts should both be reconciled."""

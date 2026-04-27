@@ -37,8 +37,8 @@ class Blend(io.ComfyNode):
     def execute(cls, image1: torch.Tensor, image2: torch.Tensor, blend_factor: float, blend_mode: str) -> io.NodeOutput:
         image2 = image2.to(image1.device)
         # Reconcile mismatched channel counts. Downstream nodes (SaveImage,
-        # PreviewImage) ultimately call PIL.Image.fromarray which only
-        # supports 1/3/4-channel arrays, so we cap the output at 4 channels
+        # PreviewImage) ultimately call PIL.Image.fromarray, which rejects
+        # arrays with more than 4 channels, so we cap the output at 4
         # (RGBA): any image with > 4 channels is truncated, and any image
         # with fewer channels than the (capped) target is padded with 1.0s
         # so the extra slot behaves like an opaque alpha channel.
