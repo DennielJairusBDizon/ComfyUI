@@ -6,7 +6,7 @@ import folder_paths
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_DEPLOY_ENV = "local_git"
+_DEFAULT_DEPLOY_ENV = "local-git"
 _ENV_FILENAME = ".comfy_environment"
 
 

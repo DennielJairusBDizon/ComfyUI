@@ -26,27 +26,27 @@ def _write_env_file(tmp_path, content: str) -> str:
 
 class TestGetDeployEnvironment:
     def test_returns_local_git_when_file_missing(self):
-        assert get_deploy_environment() == "local_git"
+        assert get_deploy_environment() == "local-git"
 
     def test_reads_value_from_file(self, tmp_path):
-        _write_env_file(tmp_path, "local_desktop2_standalone\n")
-        assert get_deploy_environment() == "local_desktop2_standalone"
+        _write_env_file(tmp_path, "local-desktop2-standalone\n")
+        assert get_deploy_environment() == "local-desktop2-standalone"
 
     def test_strips_trailing_whitespace_and_newline(self, tmp_path):
-        _write_env_file(tmp_path, "  local_desktop2_standalone  \n")
-        assert get_deploy_environment() == "local_desktop2_standalone"
+        _write_env_file(tmp_path, "  local-desktop2-standalone  \n")
+        assert get_deploy_environment() == "local-desktop2-standalone"
 
     def test_only_first_line_is_used(self, tmp_path):
-        _write_env_file(tmp_path, "first_line\nsecond_line\n")
-        assert get_deploy_environment() == "first_line"
+        _write_env_file(tmp_path, "first-line\nsecond-line\n")
+        assert get_deploy_environment() == "first-line"
 
     def test_empty_file_falls_back_to_default(self, tmp_path):
         _write_env_file(tmp_path, "")
-        assert get_deploy_environment() == "local_git"
+        assert get_deploy_environment() == "local-git"
 
     def test_empty_after_whitespace_strip_falls_back_to_default(self, tmp_path):
         _write_env_file(tmp_path, "   \n")
-        assert get_deploy_environment() == "local_git"
+        assert get_deploy_environment() == "local-git"
 
     def test_strips_control_chars_within_first_line(self, tmp_path):
         # Embedded NUL/control chars in the value should be stripped
@@ -80,4 +80,4 @@ class TestGetDeployEnvironment:
             raise OSError("simulated read failure")
 
         monkeypatch.setattr("builtins.open", _boom)
-        assert get_deploy_environment() == "local_git"
+        assert get_deploy_environment() == "local-git"
