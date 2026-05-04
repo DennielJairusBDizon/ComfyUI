@@ -4,15 +4,15 @@ import os
 
 import pytest
 
+from comfy import deploy_environment
 from comfy.deploy_environment import get_deploy_environment
 
 
 @pytest.fixture(autouse=True)
-def _reset_cache_and_base_path(tmp_path, monkeypatch):
-    """Reset the functools cache and point folder_paths.base_path at a tmp dir for each test."""
+def _reset_cache_and_install_dir(tmp_path, monkeypatch):
+    """Reset the functools cache and point the ComfyUI install dir at a tmp dir for each test."""
     get_deploy_environment.cache_clear()
-    import folder_paths
-    monkeypatch.setattr(folder_paths, "base_path", str(tmp_path))
+    monkeypatch.setattr(deploy_environment, "_COMFY_INSTALL_DIR", str(tmp_path))
     yield
     get_deploy_environment.cache_clear()
 
