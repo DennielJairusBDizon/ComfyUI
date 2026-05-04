@@ -19,7 +19,9 @@ def get_deploy_environment() -> str:
     env_file = os.path.join(folder_paths.base_path, _ENV_FILENAME)
     try:
         with open(env_file, encoding="utf-8") as f:
-            first_line = f.readline().strip()
+            # Cap the read so a malformed or maliciously crafted file (e.g.
+            # a single huge line with no newline) can't blow up memory.
+            first_line = f.readline(128).strip()
             value = "".join(c for c in first_line if 32 <= ord(c) < 127)
             if value:
                 _cached_value = value
