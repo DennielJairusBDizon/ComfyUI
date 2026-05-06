@@ -39,16 +39,18 @@ STARTING_POINT_ID_PATTERN = r"<starting_point_id:(.*)>"
 
 
 class SupportedOpenAIModel(str, Enum):
-    o4_mini = "o4-mini"
-    o1 = "o1"
-    o3 = "o3"
-    o1_pro = "o1-pro"
-    gpt_4_1 = "gpt-4.1"
-    gpt_4_1_mini = "gpt-4.1-mini"
-    gpt_4_1_nano = "gpt-4.1-nano"
+    gpt_5_5_pro = "gpt-5.5-pro"
+    gpt_5_5 = "gpt-5.5"
     gpt_5 = "gpt-5"
     gpt_5_mini = "gpt-5-mini"
     gpt_5_nano = "gpt-5-nano"
+    gpt_4_1 = "gpt-4.1"
+    gpt_4_1_mini = "gpt-4.1-mini"
+    gpt_4_1_nano = "gpt-4.1-nano"
+    o4_mini = "o4-mini"
+    o3 = "o3"
+    o1_pro = "o1-pro"
+    o1 = "o1"
 
 
 async def validate_and_cast_response(response, timeout: int = None) -> torch.Tensor:
@@ -454,7 +456,6 @@ class OpenAIGPTImage1(IO.ComfyNode):
                     step=16,
                     tooltip="Used only when `size` is 'Custom'. Must be a multiple of 16 (GPT Image 2 only).",
                     optional=True,
-                    advanced=True,
                 ),
                 IO.Int.Input(
                     "custom_height",
@@ -464,7 +465,6 @@ class OpenAIGPTImage1(IO.ComfyNode):
                     step=16,
                     tooltip="Used only when `size` is 'Custom'. Must be a multiple of 16 (GPT Image 2 only).",
                     optional=True,
-                    advanced=True,
                 ),
             ],
             outputs=[
@@ -739,6 +739,16 @@ class OpenAIChatNode(IO.ComfyNode):
                   : $contains($m, "gpt-4.1") ? {
                     "type": "list_usd",
                     "usd": [0.002, 0.008],
+                    "format": { "approximate": true, "separator": "-", "suffix": " per 1K tokens" }
+                  }
+                  : $contains($m, "gpt-5.5-pro") ? {
+                    "type": "list_usd",
+                    "usd": [0.03, 0.18],
+                    "format": { "approximate": true, "separator": "-", "suffix": " per 1K tokens" }
+                  }
+                  : $contains($m, "gpt-5.5") ? {
+                    "type": "list_usd",
+                    "usd": [0.005, 0.03],
                     "format": { "approximate": true, "separator": "-", "suffix": " per 1K tokens" }
                   }
                   : $contains($m, "gpt-5-nano") ? {
