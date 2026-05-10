@@ -5,7 +5,7 @@
   "nodes": [
     {
       "id": 88,
-      "type": "03921aea-a70e-44b4-bc77-f6bda10f2120",
+      "type": "2a4f0815-c4d2-4e8b-9bdf-991a8403889d",
       "pos": [
         -120,
         240
@@ -168,7 +168,7 @@
   "definitions": {
     "subgraphs": [
       {
-        "id": "03921aea-a70e-44b4-bc77-f6bda10f2120",
+        "id": "2a4f0815-c4d2-4e8b-9bdf-991a8403889d",
         "version": 1,
         "state": {
           "lastGroupId": 7,
@@ -199,7 +199,7 @@
         },
         "inputs": [
           {
-            "id": "504de359-52a4-49aa-b6be-23c1cdb0cbde",
+            "id": "74a4609c-67df-4ae9-ab96-9ff4e3a1c3b1",
             "name": "value",
             "type": "STRING",
             "linkIds": [
@@ -212,7 +212,7 @@
             ]
           },
           {
-            "id": "29f699c6-9263-41f6-b37d-69b9fc3913dd",
+            "id": "996f1854-7ae3-450e-821c-a9b5b7c310f9",
             "name": "value_1",
             "type": "BOOLEAN",
             "linkIds": [
@@ -225,7 +225,7 @@
             ]
           },
           {
-            "id": "968e6213-d1e9-4268-8f47-1d6b9a39a43e",
+            "id": "71e9c6e8-4285-4543-b1d3-81520088f6a4",
             "name": "width",
             "type": "INT",
             "linkIds": [
@@ -238,7 +238,7 @@
             ]
           },
           {
-            "id": "181c49ef-740d-4385-aa11-79718951ccb9",
+            "id": "bdb6cd97-67d9-440c-8c4c-9b7a7540edd0",
             "name": "height",
             "type": "INT",
             "linkIds": [
@@ -251,7 +251,7 @@
             ]
           },
           {
-            "id": "5d036a66-5dc0-4d7c-b9a9-349e454738aa",
+            "id": "18abb56c-30bf-4de5-83c1-c12376e8d14e",
             "name": "seed",
             "type": "INT",
             "linkIds": [
@@ -263,7 +263,7 @@
             ]
           },
           {
-            "id": "360f9a40-aac5-4e9c-bc98-9d55a4a58be2",
+            "id": "e5cd06f9-64ed-4778-97ba-b165f7a79c4e",
             "name": "unet_name",
             "type": "COMBO",
             "linkIds": [
@@ -275,7 +275,7 @@
             ]
           },
           {
-            "id": "886301c7-6e88-4cec-96fa-8ae20e8340c5",
+            "id": "06480e4c-4043-489b-ae68-1cf2b4246260",
             "name": "clip_name",
             "type": "COMBO",
             "linkIds": [
@@ -287,7 +287,7 @@
             ]
           },
           {
-            "id": "b77ffefd-20d8-4493-b4fe-b090a5f9101d",
+            "id": "8d65d01b-16b2-420d-8b7b-42077c2e4976",
             "name": "clip_name_1",
             "type": "COMBO",
             "linkIds": [
@@ -300,7 +300,7 @@
             ]
           },
           {
-            "id": "01990356-cd16-45c7-8980-44b0ea2e3a8e",
+            "id": "697f2fdb-0fd9-4008-a895-0f9ce9e8fd88",
             "name": "vae_name",
             "type": "COMBO",
             "linkIds": [
@@ -314,7 +314,7 @@
         ],
         "outputs": [
           {
-            "id": "f4cb34c8-4090-4281-b428-7338a339d274",
+            "id": "21d5fbe0-9f91-4d93-8ea8-5bbf2cd5b698",
             "name": "IMAGE",
             "type": "IMAGE",
             "linkIds": [
