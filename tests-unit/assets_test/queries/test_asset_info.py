@@ -158,6 +158,80 @@ class TestListReferencesPage:
         refs, _, _ = list_references_page(session, sort="name", order="asc")
         assert refs[0].name == "large"
 
+    def test_job_ids_filter_single(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        ref1 = _make_reference(session, asset, name="with_job")
+        ref1.job_id = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        ref2 = _make_reference(session, asset, name="no_job")
+        session.commit()
+
+        refs, _, total = list_references_page(
+            session, job_ids=["aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"]
+        )
+        assert total == 1
+        assert refs[0].name == "with_job"
+
+    def test_job_ids_filter_multiple(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        ref1 = _make_reference(session, asset, name="job_a")
+        ref1.job_id = "aaaaaaaa-1111-2222-3333-444444444444"
+        ref2 = _make_reference(session, asset, name="job_b")
+        ref2.job_id = "bbbbbbbb-1111-2222-3333-444444444444"
+        ref3 = _make_reference(session, asset, name="no_job")
+        session.commit()
+
+        refs, _, total = list_references_page(
+            session,
+            job_ids=[
+                "aaaaaaaa-1111-2222-3333-444444444444",
+                "bbbbbbbb-1111-2222-3333-444444444444",
+            ],
+        )
+        assert total == 2
+        names = {r.name for r in refs}
+        assert names == {"job_a", "job_b"}
+
+    def test_job_ids_filter_empty_returns_all(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        ref1 = _make_reference(session, asset, name="with_job")
+        ref1.job_id = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        _make_reference(session, asset, name="no_job")
+        session.commit()
+
+        refs, _, total = list_references_page(session, job_ids=[])
+        assert total == 2
+
+    def test_job_ids_filter_no_match(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        ref1 = _make_reference(session, asset, name="with_job")
+        ref1.job_id = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        session.commit()
+
+        refs, _, total = list_references_page(
+            session, job_ids=["99999999-9999-9999-9999-999999999999"]
+        )
+        assert total == 0
+        assert refs == []
+
+    def test_job_ids_combined_with_tags(self, session: Session):
+        asset = _make_asset(session, "hash1")
+        ref1 = _make_reference(session, asset, name="tagged_with_job")
+        ref1.job_id = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        ensure_tags_exist(session, ["wanted"])
+        add_tags_to_reference(session, reference_id=ref1.id, tags=["wanted"])
+
+        ref2 = _make_reference(session, asset, name="untagged_with_job")
+        ref2.job_id = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        session.commit()
+
+        refs, _, total = list_references_page(
+            session,
+            job_ids=["aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"],
+            include_tags=["wanted"],
+        )
+        assert total == 1
+        assert refs[0].name == "tagged_with_job"
+
 
 class TestFetchReferenceAssetAndTags:
     def test_returns_none_for_nonexistent(self, session: Session):
